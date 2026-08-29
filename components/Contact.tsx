@@ -92,8 +92,12 @@ export function Contact() {
           </div>
 
           {submitted ? (
-            <div className="animate-fade-in rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-8 text-center">
-              <div className="mb-4 text-4xl">✓</div>
+            <div
+              className="animate-fade-in rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-8 text-center"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="mb-4 text-4xl" aria-hidden="true">✓</div>
               <h3 className="text-xl font-semibold">Inquiry Sent</h3>
               <p className="mt-2 text-[var(--color-muted)]">
                 Thank you for reaching out. We&apos;ll review your message and
@@ -102,14 +106,16 @@ export function Contact() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-                >
-                  {error}
-                </div>
-              )}
+              <div aria-live="polite" aria-atomic="true">
+                {error && (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+                  >
+                    {error}
+                  </div>
+                )}
+              </div>
 
               {/* Honeypot field — hidden from real users, bots will fill it */}
               <div

@@ -45,7 +45,7 @@ A one-page corporate website for MSC — a software engineering company focused 
 | Language | TypeScript (strict mode) |
 | Styling | Tailwind CSS v4 |
 | Validation | Zod |
-| Testing | Vitest |
+| Testing | Vitest + React Testing Library |
 | Linting | ESLint + Prettier |
 | Hosting | Vercel |
 | Database | Cloudflare D1 |
@@ -55,11 +55,12 @@ A one-page corporate website for MSC — a software engineering company focused 
 
 - **10 sections**: Navbar, Hero, Services, Solutions, Process, Technologies, About, CTA, Contact, Footer
 - **Responsive design**: 320px → 1440px, no horizontal scroll
-- **Accessibility**: Semantic HTML, keyboard navigation, focus states, reduced-motion support
+- **Accessibility**: WCAG 2.2 AA — semantic HTML, keyboard navigation, focus states, reduced-motion support, skip-to-content link, aria-live form errors
+- **SEO**: Open Graph, Twitter cards, JSON-LD structured data, canonical URL, robots.txt, sitemap.xml
 - **Contact API**: POST /api/contact with Zod validation, D1 storage
 - **Admin dashboard**: /admin to view all submissions
 - **Security**: Rate limiting (5/IP/hour), honeypot, timing checks, CSP, HSTS, XSS/SQL injection prevention
-- **49 passing tests**
+- **91 passing tests** (component, API, security, validation)
 
 ## Project Structure
 
@@ -68,7 +69,7 @@ msc-website/
 ├── app/
 │   ├── api/contact/route.ts   # Contact API (POST, GET)
 │   ├── admin/page.tsx         # Admin dashboard (server component)
-│   ├── layout.tsx             # Root layout with metadata
+│   ├── layout.tsx             # Root layout with SEO metadata
 │   ├── page.tsx               # Main one-page website
 │   ├── globals.css            # Global styles & Tailwind config
 │   ├── robots.ts              # SEO robots.txt
@@ -85,11 +86,11 @@ msc-website/
 │   ├── Contact.tsx            # Contact form (honeypot, timing)
 │   ├── Footer.tsx             # Footer
 │   ├── ServiceIcon.tsx        # SVG icon renderer
+│   ├── StructuredData.tsx     # JSON-LD structured data
 │   ├── index.ts               # Barrel exports
 │   └── ui/
 │       ├── Button.tsx         # Reusable button
 │       ├── Container.tsx      # Max-width container
-│       ├── Section.tsx        # Section wrapper
 │       └── index.ts           # Barrel exports
 ├── lib/
 │   ├── constants.ts           # Site config & data
@@ -101,9 +102,10 @@ msc-website/
 ├── scripts/
 │   └── db-setup.sh            # Local D1 setup
 ├── tests/
-│   ├── api/contact.test.ts    # API + validation tests
-│   ├── security.test.ts       # Security tests
-│   ├── placeholder.test.ts    # Placeholder tests
+│   ├── api/contact.test.ts    # API + validation tests (31)
+│   ├── components.test.tsx    # Component tests (42)
+│   ├── security.test.ts       # Security tests (16)
+│   ├── placeholder.test.ts    # Basic tests (2)
 │   └── setup.ts               # Vitest setup
 ├── .env.example               # Environment variable template
 ├── .gitignore                 # Git ignore rules
@@ -166,6 +168,25 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run db:query` | Query local submissions |
 | `npm run db:reset` | Reset local database |
 
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID | Yes (production) |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with D1 permissions | Yes (production) |
+| `CLOUDFLARE_D1_DATABASE_ID` | D1 database ID | Yes (production) |
+
+**Local development**: No env vars needed — wrangler handles local D1 automatically.
+
+## Cloudflare D1 Setup
+
+1. Create D1 database: https://dash.cloudflare.com → Workers & Pages → D1
+2. Run migration:
+   ```bash
+   npx wrangler d1 execute msc-website-db --remote --file=db/migrations/0001_initial.sql
+   ```
+3. Copy the database ID to your Vercel environment variables
+
 ## Deployment
 
 ### GitHub
@@ -175,21 +196,8 @@ Repository: https://github.com/Chuksbrownj/msc-website
 ### Vercel
 
 1. Import the GitHub repository at https://vercel.com/new
-2. Add environment variables (see below)
+2. Add environment variables (see above)
 3. Deploy
-
-### Environment Variables (Vercel)
-
-| Variable | Description |
-|----------|-------------|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with D1 permissions |
-| `CLOUDFLARE_D1_DATABASE_ID` | D1 database ID |
-
-### Cloudflare D1
-
-1. Create D1 database: https://dash.cloudflare.com → Workers & Pages → D1
-2. Run migration: `npx wrangler d1 execute msc-website-db --remote --file=db/migrations/0001_initial.sql`
 
 ### Custom Domain (Optional)
 
@@ -199,14 +207,70 @@ If using Cloudflare DNS:
 3. In Cloudflare: Add CNAME record pointing to `cname.vercel-dns.com`
 4. Set Cloudflare proxy to DNS-only (gray cloud) for initial setup
 
-## Phase Status
+## Security
 
-- [x] Phase 1: Project Foundation & Architecture
-- [x] Phase 2: UI/UX & One-Page Frontend
-- [x] Phase 3: Cloudflare D1 Database
-- [x] Phase 4: Backend Contact API
-- [x] Phase 5: Security & Abuse Protection
-- [x] Phase 6: Connectivity & Deployment
+### Controls Implemented
+
+- **Rate limiting**: 5 requests per IP per hour (in-memory sliding window)
+- **Honeypot**: Hidden field catches bots, returns fake success
+- **Timing check**: Rejects submissions faster than 3 seconds
+- **Input validation**: Zod schemas with strict type checking
+- **SQL injection**: Parameterized queries only (no string concatenation)
+- **XSS**: React's default JSX escaping (no dangerouslySetInnerHTML in user content)
+- **Security headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, etc.
+- **Error handling**: Safe error messages (no stack traces, SQL, or env vars exposed)
+- **Admin protection**: /admin blocked from search engine crawlers
+- **No secrets in client**: All API keys server-side only
+
+### Headers Applied
+
+| Header | Value |
+|--------|-------|
+| X-Content-Type-Options | nosniff |
+| X-Frame-Options | DENY |
+| X-XSS-Protection | 1; mode=block |
+| Referrer-Policy | strict-origin-when-cross-origin |
+| Permissions-Policy | camera=(), microphone=(), geolocation=() |
+| Strict-Transport-Security | max-age=63072000; includeSubDomains; preload |
+| Content-Security-Policy | default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' |
+
+## Testing
+
+### Test Coverage
+
+| Suite | Tests | Description |
+|-------|-------|-------------|
+| `tests/components.test.tsx` | 42 | Component rendering, accessibility, form behavior |
+| `tests/api/contact.test.ts` | 31 | API routes, validation, error handling |
+| `tests/security.test.ts` | 16 | Rate limiting, SQL injection, XSS, honeypot |
+| `tests/placeholder.test.ts` | 2 | Basic project verification |
+| **Total** | **91** | |
+
+### Running Tests
+
+```bash
+npm run test          # Run all tests
+npm run test:watch    # Watch mode
+```
+
+## Known Limitations
+
+1. **Rate limiting**: In-memory state resets on serverless cold starts. Not shared across Vercel function instances. For production-grade rate limiting, use Cloudflare or Upstash Redis.
+2. **Admin dashboard**: No authentication — anyone with the URL can view submissions. Add authentication before sharing the URL.
+3. **No email notifications**: Submissions are stored in D1 but no email is sent to the team. Consider adding Resend or SendGrid.
+4. **No analytics**: No tracking or analytics. Consider adding Vercel Analytics or Plausible.
+5. **No OG image**: Social media shares show no preview image. Create a static OG image for better sharing.
+6. **Single language**: English only. No i18n support.
+
+## Recommended Future Improvements
+
+- Add authentication to /admin (e.g., NextAuth, Supabase Auth)
+- Add email notifications on new submissions (Resend, SendGrid)
+- Add analytics (Vercel Analytics, Plausible)
+- Create OG image for social media sharing
+- Add rate limiting via Cloudflare or Upstash Redis for production
+- Add blog or case studies section
+- Add i18n support for multiple languages
 
 ## License
 

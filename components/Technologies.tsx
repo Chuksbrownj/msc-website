@@ -3,7 +3,7 @@ import { Container } from "@/components/ui/Container";
 
 export function Technologies() {
   return (
-    <section className="border-y border-[var(--color-border)] bg-[var(--color-secondary)] py-20 md:py-28">
+    <section id="technologies" className="border-y border-[var(--color-border)] bg-[var(--color-secondary)] py-20 md:py-28">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
           <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-accent)]">

@@ -6,7 +6,7 @@ export const SITE_CONFIG = {
   name: "MSC",
   title: "MSC — Software Engineering & AI Automation",
   description:
-    "MSC is a software engineering company specializing in custom software, AI automation, workflow automation, data analysis, and full-stack development.",
+    "MSC builds modern software, AI-powered solutions, automated workflows, and data-driven systems for businesses.",
   url: "https://msc.dev",
   email: "hello@msc.dev",
 } as const;
