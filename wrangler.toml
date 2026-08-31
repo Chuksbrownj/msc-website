@@ -1,8 +1,0 @@
-# MSC Website — Cloudflare Wrangler Configuration
-# Used for local D1 development via `wrangler d1` commands.
-# Production D1 is configured in the Cloudflare dashboard.
-
-[[d1_databases]]
-binding = "DB"
-database_name = "msc-website-db"
-database_id = "local-dev-database-id"

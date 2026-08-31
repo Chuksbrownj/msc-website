@@ -8,7 +8,7 @@
  * - In-memory state resets on serverless function cold starts
  * - Not shared across Vercel function instances
  * - On Vercel, each function invocation may have its own counter
- * - For production-grade rate limiting, use Cloudflare or Upstash Redis
+ * - For production-grade rate limiting, use Upstash Redis
  */
 
 interface RateLimitEntry {
@@ -93,7 +93,7 @@ export function checkRateLimit(
  * Falls back to "unknown" if no IP is found.
  */
 export function getClientIp(request: Request): string {
-  // Vercel/Cloudflare set these headers
+  // Vercel/Next.js set these headers
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     return forwarded.split(",")[0].trim();

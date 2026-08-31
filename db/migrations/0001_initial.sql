@@ -1,14 +1,14 @@
--- MSC Website — Migration 0001: Initial schema
+-- MSC Website — Migration 0001: Initial schema (PostgreSQL)
 -- Creates the contact_submissions table for project inquiry handling.
 
 CREATE TABLE IF NOT EXISTS contact_submissions (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     company TEXT,
     service TEXT NOT NULL,
     message TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Index on email for lookup/filtering by contact

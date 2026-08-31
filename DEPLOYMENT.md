@@ -4,44 +4,36 @@
 
 - GitHub account
 - Vercel account (free tier)
-- Cloudflare account (free tier)
+- Neon account (free tier)
 - Node.js 18+
 
-## Step 1: Cloudflare D1 Setup
+## Step 1: Neon Database Setup
 
-### Create D1 Database
+### Create Project
 
-1. Go to https://dash.cloudflare.com
-2. Navigate to **Workers & Pages** → **D1**
-3. Click **Create database**
-4. Name: `msc-website-db`
-5. Choose **Recommended** location (or pick closest to your users)
-6. Click **Create**
+1. Go to https://console.neon.tech
+2. Sign up / log in
+3. Click **Create Project**
+4. Choose a project name (e.g., `msc-website`)
+5. Select a region closest to your users
+6. Click **Create Project**
 
-### Get Credentials
+### Get Connection String
 
-1. Go to **My Profile** → **API Tokens**
-2. Click **Create Token**
-3. Use **Edit Cloudflare Workers** template
-4. Under **Account Resources**, select your account
-5. Under **D1**, select `msc-website-db`
-6. Click **Continue to summary** → **Create Token**
-7. Copy the token (shown once)
-
-### Get Database ID
-
-1. Go to **Workers & Pages** → **D1** → `msc-website-db`
-2. Copy the **Database ID** from the overview page
+1. In the project dashboard, go to **Connection Details**
+2. Select **Connection string** tab
+3. Copy the full `postgresql://...` URL
+4. Make sure to use the **pooled** connection string (port 5432) for serverless environments like Vercel
 
 ### Run Migration
 
 ```bash
-# Set your credentials in .env.local first
+# Set your connection string in .env.local
 cp .env.example .env.local
-# Edit .env.local with your credentials
+# Edit .env.local and paste your DATABASE_URL
 
-# Run migration against production D1
-npm run db:migrate:remote
+# Run migration against Neon
+npm run db:migrate
 ```
 
 ## Step 2: Vercel Setup
@@ -59,9 +51,7 @@ On the deploy screen, expand **Environment Variables** and add:
 
 | Key | Value | Environments |
 |-----|-------|-------------|
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare Account ID | Production, Preview |
-| `CLOUDFLARE_API_TOKEN` | Your Cloudflare API Token | Production, Preview |
-| `CLOUDFLARE_D1_DATABASE_ID` | Your D1 Database ID | Production, Preview |
+| `DATABASE_URL` | Your Neon connection string | Production, Preview |
 
 ### Deploy
 
@@ -116,7 +106,7 @@ After deployment, verify:
 - [ ] `GET /api/contact` returns submissions list
 
 ### Database
-- [ ] Valid submissions reach D1
+- [ ] Valid submissions reach Neon
 - [ ] Admin page shows submissions at `/admin`
 
 ### Security
@@ -142,21 +132,21 @@ Expected headers:
 
 | Environment | URL | Database | Branch |
 |-------------|-----|----------|--------|
-| Local | `localhost:3000` | Local D1 (wrangler) | Any |
-| Preview | `*.vercel.app` | Production D1 | Pull requests |
-| Production | `your-domain.com` | Production D1 | `main` |
+| Local | `localhost:3000` | Neon (shared dev) | Any |
+| Preview | `*.vercel.app` | Neon (same DB) | Pull requests |
+| Production | `your-domain.com` | Neon (same DB) | `main` |
 
 ## Troubleshooting
 
 ### Build fails on Vercel
 - Check build logs in Vercel dashboard
-- Ensure all environment variables are set
+- Ensure `DATABASE_URL` environment variable is set
 - Run `npm run build` locally to reproduce
 
 ### Contact form returns 500
 - Check Vercel function logs
-- Verify D1 credentials are correct
-- Ensure migration has been run
+- Verify `DATABASE_URL` is correct
+- Ensure migration has been run: `npm run db:migrate`
 
 ### Rate limiting too aggressive
 - In-memory rate limiter resets on cold starts
@@ -174,12 +164,8 @@ Expected headers:
 - 1000 build minutes/month
 - Serverless function execution included
 
-### Cloudflare D1
-- 5GB storage
-- 100 million reads/day
-- 50,000 writes/day
-
-### Cloudflare (Free)
-- Unlimited DNS queries
-- DDoS protection
-- SSL/TLS encryption
+### Neon (Free)
+- 0.5 GB storage
+- 24/7 compute (50 hours/month)
+- 100 concurrent connections
+- Autoscaling to zero when idle

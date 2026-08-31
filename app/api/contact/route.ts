@@ -2,7 +2,7 @@
  * MSC Website — POST /api/contact
  *
  * Accepts contact/project inquiry submissions.
- * Validates with Zod, stores in Cloudflare D1.
+ * Validates with Zod, stores in Neon PostgreSQL.
  * Rate-limited, honeypot-protected, timing-checked.
  * Server-side only — no secrets exposed to browser.
  */
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- Insert into D1 ---
+    // --- Insert into database ---
     await insertContactSubmission(result.data);
 
     return NextResponse.json(
